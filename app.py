@@ -52,26 +52,44 @@ st.sidebar.subheader("🎲 Padrão da Floresta")
 travar_aleatoriedade = st.sidebar.checkbox("Manter o mesmo padrão", value=True)
 semente_escolhida = st.sidebar.number_input("Código", value=42, step=1) if travar_aleatoriedade else None
 
-with st.sidebar.expander("🔬 Parâmetros Biométricos", expanded=False):
-    st.markdown("**1. Weibull 2P**")
-    gamma_in = st.number_input("Gamma", value=8.882151, format="%.6f")
-    beta_in = st.number_input("Beta", value=11.368466, format="%.6f")
-    st.markdown("**2. Schumacher-Hall**")
-    b0_v_in = st.number_input("B0 Vol", value=-9.962793, format="%.6f")
-    b1_v_in = st.number_input("B1 Vol", value=2.128458, format="%.6f")
-    b2_v_in = st.number_input("B2 Vol", value=0.787242, format="%.6f")
-    st.markdown("**3. Hipsométrica**")
-    b0_ht_in = st.number_input("B0 HT", value=-0.355914, format="%.6f")
-    b1_ht_in = st.number_input("B1 HT", value=1.282668, format="%.6f")
-    st.markdown("**4. Projeção DAP**")
-    b1_dap_in = st.number_input("B1 Proj DAP", value=-9.533596, format="%.6f")
-    b2_dap_in = st.number_input("B2 Proj DAP", value=-0.812691, format="%.6f")
-    st.markdown("**5. Projeção HT**")
-    b1_htp_in = st.number_input("B1 Proj HT", value=-10.332914, format="%.6f")
-    b2_htp_in = st.number_input("B2 Proj HT", value=-0.626933, format="%.6f")
-    st.markdown("**6. Mortalidade (Logística)**")
-    b0_mort_in = st.number_input("B0 Mort", value=-0.8852, format="%.4f")
-    b1_mort_in = st.number_input("B1 Mort", value=-6.1832, format="%.4f")
+with st.sidebar.expander("🔬 Parâmetros Biométricos (Modelos)", expanded=False):
+    st.info("Altere os coeficientes para calibrar o simulador para o seu povoamento específico.")
+    
+    st.markdown("**1. Distribuição Inicial (Weibull 2P)**")
+    st.latex(r"f(x) = \frac{\gamma}{\beta} \left(\frac{x}{\beta}\right)^{\gamma-1} \exp\left(-\left(\frac{x}{\beta}\right)^\gamma\right)")
+    gamma_in = st.number_input("Gamma (Forma)", value=8.882151, format="%.6f")
+    beta_in = st.number_input("Beta (Escala)", value=11.368466, format="%.6f")
+    
+    st.markdown("---")
+    st.markdown("**2. Volume (Schumacher-Hall)**")
+    st.latex(r"\ln(V) = \beta_0 + \beta_1 \ln(DAP) + \beta_2 \ln(HT)")
+    b0_v_in = st.number_input("B0 Volume", value=-9.962793, format="%.6f")
+    b1_v_in = st.number_input("B1 Volume", value=2.128458, format="%.6f")
+    b2_v_in = st.number_input("B2 Volume", value=0.787242, format="%.6f")
+
+    st.markdown("---")
+    st.markdown("**3. Hipsométrica Inicial**")
+    st.latex(r"\ln(HT) = \beta_0 + \beta_1 \ln(DAP)")
+    b0_ht_in = st.number_input("B0 HT Inicial", value=-0.355914, format="%.6f")
+    b1_ht_in = st.number_input("B1 HT Inicial", value=1.282668, format="%.6f")
+
+    st.markdown("---")
+    st.markdown("**4. Projeção de DAP (Modelo Base)**")
+    st.latex(r"DAP_2 = DAP_1 \cdot \exp\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2})\right]")
+    b1_dap_in = st.number_input("B1 Proj. DAP", value=-9.533596, format="%.6f")
+    b2_dap_in = st.number_input("B2 Proj. DAP", value=-0.812691, format="%.6f")
+
+    st.markdown("---")
+    st.markdown("**5. Projeção de HT**")
+    st.latex(r"HT_2 = HT_1 \cdot \exp\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2})\right]")
+    b1_htp_in = st.number_input("B1 Proj. HT", value=-10.332914, format="%.6f")
+    b2_htp_in = st.number_input("B2 Proj. HT", value=-0.626933, format="%.6f")
+
+    st.markdown("---")
+    st.markdown("**6. Risco de Mortalidade (Logística)**")
+    st.latex(r"P(Morte) = \frac{1}{1 + \exp[-(\beta_0 + \beta_1 \cdot IDRP)]}")
+    b0_mort_in = st.number_input("B0 Mortalidade", value=-0.8852, format="%.4f")
+    b1_mort_in = st.number_input("B1 Mortalidade (Peso IDRP)", value=-6.1832, format="%.4f")
 
 # ==============================================================================
 # AÇÃO PRINCIPAL E INTEGRAÇÃO
@@ -97,8 +115,7 @@ if st.button("🚀 Rodar Simulação Florestal", use_container_width=True, type=
         mt.B0_MORT = b0_mort_in; mt.B1_MORT = b1_mort_in
 
         floresta = mt.gerar_floresta_completa(mt.LINHAS, mt.COLUNAS, mt.BETA, mt.GAMMA, seed=semente_escolhida)
-        resultados = mt.otimizar_crescimento_compensatorio(floresta, mt.IDADE_INICIAL, mt.HORIZONTE, mt.AGENDA)
-
+        resultados = mt.otimizar_crescimento_compensatorio(floresta, mt.IDADE_INICIAL, mt.HORIZONTE, mt.AGENDA, seed_simulacao=semente_escolhida)
         vol_100 = resultados['Cenario_100']['Volume_Final_Total']
         vol_mort = resultados['Cenario_Mortalidade']['Volume_Final_Total']
         vol_comp = resultados['Cenario_Compensatorio']['Volume_Final_Total']

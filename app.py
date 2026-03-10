@@ -155,7 +155,12 @@ if st.button("🚀 Rodar Simulação Florestal", use_container_width=True, type=
         c3.metric("💀 Mortas (Abertura de Dossel)", f"{n_mortas} falhas", f"{pct_mortas:.1f}% do estande", delta_color="off")
 
         # --- ESFORÇO DE CRESCIMENTO ---
-        st.header("🎯 3. Esforço de Crescimento (Fator de Compensação: {:.4f})".format(b3_opt))
+        st.header("🎯 3. Esforço de Crescimento (Fator de Compensação: {:.12f})".format(b3_opt))
+        
+        st.markdown("A projeção do diâmetro das árvores vizinhas foi alterada pela inclusão do termo aditivo compensatório:")
+        st.latex(r"DAP_2 = DAP_1 \cdot \exp\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2}) + \beta_3 \cdot ILE_{Dinamico}\right]")
+        st.markdown("Nesta formulação, o parâmetro $\beta_3$ atua como um multiplicador de resiliência sobre o **Índice de Liberação Espacial Dinâmico ($ILE_{Dinamico}$)**, capitalizando o espaço extra deixado pelas clareiras e o tempo decorrido desde a mortalidade.")
+        
         dados_ganho, caminho_csv = mt.gerar_relatorio_individual_e_ganho(df_100, df_mort, df_comp)
         
         if dados_ganho:
@@ -198,7 +203,7 @@ if st.button("🚀 Rodar Simulação Florestal", use_container_width=True, type=
                            Patch(facecolor='forestgreen', label='Intacta')]
         ax_map[0].legend(handles=legend_elements, loc='lower center', bbox_to_anchor=(0.5, -0.15), ncol=3, frameon=False)
 
-        sns.heatmap(grid_viz_mortos, cmap='Blues', annot=True, fmt='.0f', ax=ax_map[1], square=True, xticklabels=False, yticklabels=False)
+        sns.heatmap(grid_viz_mortos, cmap='Blues', annot=False, ax=ax_map[1], square=True, xticklabels=False, yticklabels=False)
         ax_map[1].set_title("Intensidade de Exposição (Nº Vizinhos Mortos)", fontsize=14)
         
         plt.tight_layout()

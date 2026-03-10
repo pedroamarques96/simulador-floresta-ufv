@@ -290,46 +290,89 @@ def otimizar_crescimento_compensatorio(floresta, idade_ini, horizonte, agenda_mo
     }
 
 def realizar_analise_anual_completa(df_sem_comp, df_com_comp, df_100_viva, coeficientes_otimos=None):
-    """ Retorna as imagens no lugar de printar na tela """
-    viz_sem = df_sem_comp[df_sem_comp['Classe'] == 'Vizinha'].copy()
-    viz_sem['Cenario'] = 'Sem Compensação'
+    """ Retorna as imagens com estética minimalista para Web """
     
+    # 1. Configuração de Estética Clean (Fundo Branco, Sem Grades)
+    sns.set_theme(style="white")
+    
+    viz_sem = df_sem_comp[df_sem_comp['Classe'] == 'Vizinha'].copy()
     viz_com = df_com_comp[df_com_comp['Classe'] == 'Vizinha'].copy()
+
+    df_viz_total_check = pd.concat([viz_sem, viz_com])
+    
+    # Proteção caso não haja árvores mortas
+    if df_viz_total_check.empty:
+        fig_vazia, ax = plt.subplots(figsize=(8, 4))
+        ax.text(0.5, 0.5, "Nenhuma mortalidade registrada no período.\nGráficos indisponíveis.", 
+                ha='center', va='center', fontsize=12, color='gray')
+        ax.axis('off')
+        return fig_vazia, fig_vazia
+
+    viz_sem['Cenario'] = 'Sem Compensação'
     viz_com['Cenario'] = 'Com Compensação'
     
     viz_sem['Centro_Classe'] = (viz_sem['DAP'] // 2 * 2 + 1).astype(int)
     viz_com['Centro_Classe'] = (viz_com['DAP'] // 2 * 2 + 1).astype(int)
     
     df_viz_total = pd.concat([viz_sem, viz_com])
-    paleta_cores = {'Sem Compensação': 'forestgreen', 'Com Compensação': 'royalblue'}
+    
+    # Cores mais modernas para o fundo branco
+    paleta_cores = {'Sem Compensação': '#e74c3c', 'Com Compensação': '#3498db'} 
 
     if not os.path.exists('Resultados_Graficos'):
         os.makedirs('Resultados_Graficos')
 
-    # GRÁFICOS (Gerados em memória e retornados)
+    # ==========================================
+    # GRÁFICO 1: HISTOGRAMA DE TRANSIÇÃO
+    # ==========================================
     idades_comuns = sorted(df_100_viva['Idade'].unique())
     idades_plot = [id for id in idades_comuns if id % 12 == 0 or id == idades_comuns[-1]]
     df_hist = df_viz_total[df_viz_total['Idade'].isin(idades_plot)]
-    ticks_exatos = sorted(df_hist['Centro_Classe'].unique())
     
-    g = sns.FacetGrid(df_hist, col="Idade", col_wrap=3, height=4, aspect=1.3, sharey=False, sharex=False)
-    g.map_dataframe(sns.histplot, x="Centro_Classe", hue="Cenario", discrete=True, multiple="dodge", shrink=0.8, 
-                    palette=paleta_cores, edgecolor="black", linewidth=0.5, alpha=0.9)
-    for ax in g.axes.flat:
-        if len(ticks_exatos) > 0: ax.set_xticks(ticks_exatos)
-        ax.grid(axis='y', linestyle=':', alpha=0.5)
-        ax.tick_params(labelbottom=True)
-    g.add_legend(title="Situação")
-    fig_histograma = g.fig
-    plt.close(fig_histograma) # Fecha para não bugar a memória
+    if df_hist.empty:
+        fig_histograma, ax = plt.subplots(figsize=(8, 4))
+        ax.text(0.5, 0.5, "Sem dados suficientes nos anos múltiplos de 12.", ha='center', va='center')
+        ax.axis('off')
+    else:
+        ticks_exatos = sorted(df_hist['Centro_Classe'].unique())
+        g = sns.FacetGrid(df_hist, col="Idade", col_wrap=3, height=4, aspect=1.3, sharey=False, sharex=False)
+        g.map_dataframe(sns.histplot, x="Centro_Classe", hue="Cenario", discrete=True, multiple="dodge", shrink=0.8, 
+                        palette=paleta_cores, edgecolor="black", linewidth=0.5, alpha=0.9)
+        
+        # Alteração 3: Nomes dos Eixos do Histograma
+        g.set_axis_labels("Centro de Classe", "Número de Árvores")
+        
+        for ax in g.axes.flat:
+            if len(ticks_exatos) > 0: ax.set_xticks(ticks_exatos)
+            ax.grid(False) # Remove as grades internas
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+            ax.spines['left'].set_color('#cccccc')
+            ax.spines['bottom'].set_color('#cccccc')
+            
+        g.add_legend(title="Situação")
+        fig_histograma = g.fig
+        plt.close(fig_histograma) 
 
-    fig_tendencia, axes = plt.subplots(1, 3, figsize=(18, 6))
+    # ==========================================
+    # GRÁFICO 2: EVOLUÇÃO DAP, HT e VOL
+    # ==========================================
+    fig_tendencia, axes = plt.subplots(1, 3, figsize=(18, 5))
     vars_plot = [('DAP', 'cm'), ('HT', 'm'), ('VOL', 'm³')]
+    
     for i, (var, unit) in enumerate(vars_plot):
-        sns.lineplot(data=df_viz_total, x='Idade', y=var, hue='Cenario', palette=paleta_cores, ax=axes[i], linewidth=2.5)
-        axes[i].set_title(f"Média: {var}", fontsize=12, weight='bold')
-        axes[i].set_ylabel(f"{var} ({unit})")
-        axes[i].grid(True, linestyle='--', alpha=0.5)
+        sns.lineplot(data=df_viz_total, x='Idade', y=var, hue='Cenario', palette=paleta_cores, ax=axes[i], linewidth=3)
+        axes[i].set_title(f"Evolução Média: {var}", fontsize=14, weight='bold', color='#333333', pad=15)
+        axes[i].set_ylabel(f"{var} ({unit})", fontsize=12)
+        axes[i].set_xlabel("Idade (meses)", fontsize=12)
+        
+        # Limpando o visual
+        axes[i].grid(False)
+        axes[i].spines['top'].set_visible(False)
+        axes[i].spines['right'].set_visible(False)
+        axes[i].spines['left'].set_color('#cccccc')
+        axes[i].spines['bottom'].set_color('#cccccc')
+        
     plt.tight_layout()
     plt.close(fig_tendencia)
 

@@ -7,19 +7,21 @@ from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
 import motor as mt 
 
-st.set_page_config(page_title="Simulador UFV", layout="wide", page_icon="🌲")
+st.set_page_config(page_title="ForestSIM", layout="wide", page_icon="🌲")
 
-st.title("🌲 Simulador de Dinâmica e Crescimento Compensatório")
+st.title("🌳 ForestSIM - Simulador Florestal 🌲")
 st.markdown("""
-**Universidade Federal de Viçosa (UFV) - Programa de Pós-Graduação em Ciência Florestal** Ferramenta interativa para simulação de resiliência produtiva frente à mortalidade estocástica, 
-utilizando modelos biométricos e o Índice de Liberação Espacial Dinâmico.
+**Universidade Federal de Viçosa (UFV) - Programa de Pós-Graduação em Ciência Florestal** 
+""")
+st.markdown("""
+Ferramenta interativa para simulação espacial do crescimento de florestas, avaliando a **resposta compensatória** das árvores sobreviventes diante de diferentes cenários de mortalidade.
 """)
 st.divider()
 
 # ==============================================================================
 # BARRA LATERAL (INPUTS)
 # ==============================================================================
-st.sidebar.header("⚙️ Parâmetros do Talhão")
+st.sidebar.header("⚙️ Parâmetros da Floresta")
 
 idade_ini = st.sidebar.number_input("Idade Inicial (meses)", min_value=12, max_value=60, value=24, step=12)
 horizonte = st.sidebar.slider("Horizonte de Simulação (meses)", 12, 120, 60, step=12)
@@ -38,7 +40,7 @@ n_total_arvores = num_linhas * num_colunas
 area_m2 = n_total_arvores * (dist_linha * dist_entre)
 st.sidebar.info(f"**População Inicial:** {n_total_arvores} árvores\n\n**Área Simulada:** {area_m2:.1f} m²")
 
-st.sidebar.subheader("💀 Eventos de Mortalidade")
+st.sidebar.subheader("🪾 Eventos de Mortalidade")
 num_eventos = st.sidebar.number_input("Quantidade de Eventos", min_value=1, max_value=5, value=1, step=1)
 
 agenda_usuario = {}
@@ -158,8 +160,8 @@ if st.button("🚀 Rodar Simulação Florestal", use_container_width=True, type=
         st.header("🎯 3. Esforço de Crescimento (Fator de Compensação: {:.12f})".format(b3_opt))
         
         st.markdown("A projeção do diâmetro das árvores vizinhas foi alterada pela inclusão do termo aditivo compensatório:")
-        st.latex(r"DAP_2 = DAP_1 \cdot \exp\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2}) + \beta_3 \cdot ILE_{Dinamico}\right]")
-        st.markdown("Nesta formulação, o parâmetro $\beta_3$ atua como um multiplicador de resiliência sobre o **Índice de Liberação Espacial Dinâmico ($ILE_{Dinamico}$)**, capitalizando o espaço extra deixado pelas clareiras e o tempo decorrido desde a mortalidade.")
+        st.latex(r"DAP_2 = DAP_1 \cdot \exp\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2}) + \beta_3 \cdot ILED\right]")
+        st.markdown("Nesta formulação, o parâmetro $\beta_3$ atua como um multiplicador de resiliência sobre o **Índice de Liberação Espacial Dinâmico ($ILED$)**, capitalizando o espaço extra deixado pelas clareiras e o tempo decorrido desde a mortalidade.")
         
         dados_ganho, caminho_csv = mt.gerar_relatorio_individual_e_ganho(df_100, df_mort, df_comp)
         

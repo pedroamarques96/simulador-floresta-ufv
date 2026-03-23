@@ -51,6 +51,16 @@ for i in range(num_eventos):
     agenda_usuario[int(id_ev)] = taxa_ev / 100.0
 
 st.sidebar.subheader("🎲 Padrão da Floresta")
+st.sidebar.subheader("🎯 Resiliência (Fator Compensatório)")
+modo_simulacao = st.sidebar.radio(
+    "Modo de Simulação:", 
+    ["Encontrar B3 Ideal (Otimizador)", "Definir B3 Manualmente"]
+)
+
+if modo_simulacao == "Definir B3 Manualmente":
+    b3_usuario = st.sidebar.number_input("Valor de \u03B23 (\u00CDndice de Libera\u00E7\u00E3o)", min_value=0.0, max_value=2.0, value=0.0400, step=0.001, format="%.5f")
+else:
+    b3_usuario = None
 travar_aleatoriedade = st.sidebar.checkbox("Manter o mesmo padrão", value=True)
 semente_escolhida = st.sidebar.number_input("Código", value=42, step=1) if travar_aleatoriedade else None
 
@@ -117,7 +127,7 @@ if st.button("🚀 Rodar Simulação Florestal", use_container_width=True, type=
         mt.B0_MORT = b0_mort_in; mt.B1_MORT = b1_mort_in
 
         floresta = mt.gerar_floresta_completa(mt.LINHAS, mt.COLUNAS, mt.BETA, mt.GAMMA, seed=semente_escolhida)
-        resultados = mt.otimizar_crescimento_compensatorio(floresta, mt.IDADE_INICIAL, mt.HORIZONTE, mt.AGENDA, seed_simulacao=semente_escolhida)
+        resultados = mt.executar_simulacao_completa(floresta, mt.IDADE_INICIAL, mt.HORIZONTE, mt.AGENDA, beta_b3_usuario=b3_usuario, seed_simulacao=semente_escolhida)
         vol_100 = resultados['Cenario_100']['Volume_Final_Total']
         vol_mort = resultados['Cenario_Mortalidade']['Volume_Final_Total']
         vol_comp = resultados['Cenario_Compensatorio']['Volume_Final_Total']
@@ -130,11 +140,30 @@ if st.button("🚀 Rodar Simulação Florestal", use_container_width=True, type=
         # ==============================================================================
         # DASHBOARD NA TELA
         # ==============================================================================
+        # ==============================================================================
+        # DASHBOARD NA TELA
+        # ==============================================================================
         st.header("📊 1. Síntese de Produção")
+        
+        # Cálculos de Recuperação
+        vol_perdido_total = vol_100 - vol_mort
+        vol_recuperado = vol_comp - vol_mort
+        
+        # Evita divisão por zero caso a mortalidade seja zero
+        if vol_perdido_total > 0:
+            pct_recuperada = (vol_recuperado / vol_perdido_total) * 100
+        else:
+            pct_recuperada = 0.0
+            
         m1, m2, m3 = st.columns(3)
         m1.metric("Meta Ideal (100% Viva)", f"{vol_100:.2f} m³")
-        m2.metric("Real (Sem Compensação)", f"{vol_mort:.2f} m³", f"{(vol_mort/vol_100 - 1)*100:.1f}%", delta_color="inverse")
-        m3.metric("Real (Com Compensação)", f"{vol_comp:.2f} m³", f"+{(vol_comp - vol_mort):.2f} m³ recuperados", delta_color="normal")
+        m2.metric("Real (Sem Compensação)", f"{vol_mort:.2f} m³", f"Perda de {vol_perdido_total:.2f} m³", delta_color="inverse")
+        
+        # Se for o otimizador, ele mostra cravado. Se for manual, mostra o quanto conseguiu recuperar
+        if modo_simulacao == "Definir B3 Manualmente":
+            m3.metric("Real (Com Compensação)", f"{vol_comp:.2f} m³", f"Recuperou {pct_recuperada:.1f}% da perda", delta_color="normal")
+        else:
+            m3.metric("Real (Com Compensação)", f"{vol_comp:.2f} m³", f"Recuperou 100.0% da perda", delta_color="normal")
         
         # --- ALTERAÇÃO 2: STATUS DA FLORESTA REMANESCENTE ---
         st.header("🌳 2. Demografia da Floresta Remanescente")

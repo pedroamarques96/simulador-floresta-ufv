@@ -263,50 +263,53 @@ def simular_floresta_compensatoria(floresta_dict, idade_inicial, horizonte_meses
 
 from scipy.optimize import root_scalar, minimize_scalar
 
-def otimizar_crescimento_compensatorio(floresta, idade_ini, horizonte, agenda_mortalidade, seed_simulacao=None):
+def executar_simulacao_completa(floresta, idade_ini, horizonte, agenda_mortalidade, beta_b3_usuario=None, seed_simulacao=None):
     # Se o usuário não travou a semente, geramos uma semente única para esta rodada inteira
     if seed_simulacao is None:
         seed_simulacao = np.random.randint(0, 100000)
         
     print("--- ETAPA 1: Benchmarks ---")
     
-    # Congela a semente para garantir consistência
+    # Cenário 1: 100% Viva
     np.random.seed(seed_simulacao)
     res_100 = simular_floresta_compensatoria(floresta, idade_ini, horizonte, {}, beta_b3=0.0)
     meta_vol = res_100["Volume_Final_Total"]
     
-    # Congela a semente novamente para o cenário com mortalidade
+    # Cenário 2: Com Mortalidade, sem compensação
     np.random.seed(seed_simulacao)
     res_mort = simular_floresta_compensatoria(floresta, idade_ini, horizonte, agenda_mortalidade, beta_b3=0.0)
     
-    print("\n--- ETAPA 2: Otimizando B3 (Solver Estrito) ---")
+    print("\n--- ETAPA 2: Definindo Fator Compensatório (B3) ---")
     
-    # A Função Objetivo agora é 100% determinística (O chão para de se mexer)
-    def funcao_raiz(b3_teste):
-        np.random.seed(seed_simulacao) # O SEGREDO ESTÁ AQUI: Mesmas árvores morrem em todo teste!
-        res = simular_floresta_compensatoria(floresta, idade_ini, horizonte, agenda_mortalidade, beta_b3=b3_teste)
-        return res["Volume_Final_Total"] - meta_vol
-    
-    try:
-        # Bracket ampliado [0, 500] e tolerância microscópica (1e-12)
-        opt = root_scalar(funcao_raiz, bracket=[0.0, 500.0], method='brentq', xtol=1e-12)
-        b3_opt = opt.root
-    except ValueError:
-        # Fallback de segurança hiper restrito
-        opt = minimize_scalar(lambda x: abs(funcao_raiz(x)), bounds=(0.0, 500.0), method='bounded', options={'xatol': 1e-12})
-        b3_opt = opt.x
+    # MODO 1: OTIMIZADOR (Procura o B3 perfeito)
+    if beta_b3_usuario is None:
+        def funcao_raiz(b3_teste):
+            np.random.seed(seed_simulacao)
+            res = simular_floresta_compensatoria(floresta, idade_ini, horizonte, agenda_mortalidade, beta_b3=b3_teste)
+            return res["Volume_Final_Total"] - meta_vol
+        
+        try:
+            opt = root_scalar(funcao_raiz, bracket=[0.0, 500.0], method='brentq', xtol=1e-12)
+            b3_final = opt.root
+        except ValueError:
+            opt = minimize_scalar(lambda x: abs(funcao_raiz(x)), bounds=(0.0, 500.0), method='bounded', options={'xatol': 1e-12})
+            b3_final = opt.x
+            
+    # MODO 2: USUÁRIO DEFINIU O B3 MANUALMENTE
+    else:
+        b3_final = beta_b3_usuario
         
     print("\n--- ETAPA 3: Gerando Cenário Final ---")
     
-    # Roda o cenário final usando o B3 ótimo e a mesma loteria de mortes
+    # Roda o cenário final usando o B3 final
     np.random.seed(seed_simulacao)
-    res_comp = simular_floresta_compensatoria(floresta, idade_ini, horizonte, agenda_mortalidade, beta_b3=b3_opt)
+    res_comp = simular_floresta_compensatoria(floresta, idade_ini, horizonte, agenda_mortalidade, beta_b3=b3_final)
     
     return {
         "Cenario_100": res_100,
         "Cenario_Mortalidade": res_mort,
         "Cenario_Compensatorio": res_comp,
-        "Coeficientes_Otimos": (b3_opt, 0)
+        "Coeficientes_Otimos": (b3_final, 0)
     }
 
 def realizar_analise_anual_completa(df_sem_comp, df_com_comp, df_100_viva, coeficientes_otimos=None):

@@ -51,6 +51,9 @@ for i in range(num_eventos):
     agenda_usuario[int(id_ev)] = taxa_ev / 100.0
 
 st.sidebar.subheader("🎲 Padrão da Floresta")
+travar_aleatoriedade = st.sidebar.checkbox("Manter o mesmo padrão", value=True)
+semente_escolhida = st.sidebar.number_input("Código", value=42, step=1) if travar_aleatoriedade else None
+
 st.sidebar.subheader("🎯 Resiliência (Fator Compensatório)")
 modo_simulacao = st.sidebar.radio(
     "Modo de Simulação:", 
@@ -61,8 +64,7 @@ if modo_simulacao == "Definir B3 Manualmente":
     b3_usuario = st.sidebar.number_input("Valor de \u03B23 (\u00CDndice de Libera\u00E7\u00E3o)", min_value=0.0, max_value=2.0, value=0.0400, step=0.001, format="%.5f")
 else:
     b3_usuario = None
-travar_aleatoriedade = st.sidebar.checkbox("Manter o mesmo padrão", value=True)
-semente_escolhida = st.sidebar.number_input("Código", value=42, step=1) if travar_aleatoriedade else None
+
 
 with st.sidebar.expander("🔬 Parâmetros Biométricos (Modelos)", expanded=False):
     st.info("Altere os coeficientes para calibrar o simulador para o seu povoamento específico.")
@@ -99,9 +101,9 @@ with st.sidebar.expander("🔬 Parâmetros Biométricos (Modelos)", expanded=Fal
 
     st.markdown("---")
     st.markdown("**6. Risco de Mortalidade (Logística)**")
-    st.latex(r"P(Morte) = \frac{1}{1 + \exp[-(\beta_0 + \beta_1 \cdot IDRP)]}")
+    st.latex(r"P(m) = \frac{1}{1 + \exp[-(\beta_0 + \beta_1 \cdot IPV)]}")
     b0_mort_in = st.number_input("B0 Mortalidade", value=-0.8852, format="%.4f")
-    b1_mort_in = st.number_input("B1 Mortalidade (Peso IDRP)", value=-6.1832, format="%.4f")
+    b1_mort_in = st.number_input("B1 Mortalidade (Peso IPV)", value=-6.1832, format="%.4f")
 
 # ==============================================================================
 # AÇÃO PRINCIPAL E INTEGRAÇÃO
@@ -189,8 +191,8 @@ if st.button("🚀 Rodar Simulação Florestal", use_container_width=True, type=
         st.header("🎯 3. Esforço de Crescimento (Fator de Compensação: {:.12f})".format(b3_opt))
         
         st.markdown("A projeção do diâmetro das árvores vizinhas foi alterada pela inclusão do termo aditivo compensatório:")
-        st.latex(r"DAP_2 = DAP_1 \cdot \exp\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2}) + \beta_3 \cdot ILED\right]")
-        st.markdown("Nesta formulação, o parâmetro $\beta_3$ atua como um multiplicador de resiliência sobre o **Índice de Liberação Espacial Dinâmico ($ILED$)**, capitalizando o espaço extra deixado pelas clareiras e o tempo decorrido desde a mortalidade.")
+        st.latex(r"DAP_2 = DAP_1 \cdot \exp\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2}) + \beta_3 \cdot FLET\right]")
+        st.markdown("Nesta formulação, o parâmetro $\beta_3$ atua como um multiplicador de resiliência sobre o **Fator de Liberação Espaço-Temporal  ($FLET$)**, capitalizando o espaço extra deixado pelas clareiras e o tempo decorrido desde a mortalidade.")
         
         dados_ganho, caminho_csv = mt.gerar_relatorio_individual_e_ganho(df_100, df_mort, df_comp)
         

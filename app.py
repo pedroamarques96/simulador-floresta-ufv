@@ -76,32 +76,32 @@ with st.sidebar.expander("🔬 Parâmetros Biométricos (Modelos)", expanded=Fal
     
     st.markdown("---")
     st.markdown("**2. Volume (Schumacher-Hall)**")
-    st.latex(r"\ln(V) = \beta_0 + \beta_1 \ln(DAP) + \beta_2 \ln(HT)")
+    st.latex(r"\ln(v) = \beta_0 + \beta_1 \ln(dap) + \beta_2 \ln(h_t)")
     b0_v_in = st.number_input("B0 Volume", value=-9.962793, format="%.6f")
     b1_v_in = st.number_input("B1 Volume", value=2.128458, format="%.6f")
     b2_v_in = st.number_input("B2 Volume", value=0.787242, format="%.6f")
 
     st.markdown("---")
     st.markdown("**3. Hipsométrica Inicial**")
-    st.latex(r"\ln(HT) = \beta_0 + \beta_1 \ln(DAP)")
+    st.latex(r"\ln(h_t) = \beta_0 + \beta_1 \ln(dap)")
     b0_ht_in = st.number_input("B0 HT Inicial", value=-0.355914, format="%.6f")
     b1_ht_in = st.number_input("B1 HT Inicial", value=1.282668, format="%.6f")
 
     st.markdown("---")
-    st.markdown("**4. Projeção de DAP (Modelo Base)**")
-    st.latex(r"DAP_2 = DAP_1 \cdot \exp\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2})\right]")
+    st.markdown("**4. Projeção de dap (Modelo Base)**")
+    st.latex(r"dap_2 = dap_1 \cdot \e\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2})\right]")
     b1_dap_in = st.number_input("B1 Proj. DAP", value=-9.533596, format="%.6f")
     b2_dap_in = st.number_input("B2 Proj. DAP", value=-0.812691, format="%.6f")
 
     st.markdown("---")
-    st.markdown("**5. Projeção de HT**")
-    st.latex(r"HT_2 = HT_1 \cdot \exp\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2})\right]")
+    st.markdown("**5. Projeção de h_t**")
+    st.latex(r"ht_2 = ht_1 \cdot \e\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2})\right]")
     b1_htp_in = st.number_input("B1 Proj. HT", value=-10.332914, format="%.6f")
     b2_htp_in = st.number_input("B2 Proj. HT", value=-0.626933, format="%.6f")
 
     st.markdown("---")
     st.markdown("**6. Risco de Mortalidade (Logística)**")
-    st.latex(r"P(m) = \frac{1}{1 + \exp[-(\beta_0 + \beta_1 \cdot IPV)]}")
+    st.latex(r"P(m) = \frac{1}{1 + \e[-(\beta_0 + \beta_1 \cdot IPV)]}")
     b0_mort_in = st.number_input("B0 Mortalidade", value=-0.8852, format="%.4f")
     b1_mort_in = st.number_input("B1 Mortalidade (Peso IPV)", value=-6.1832, format="%.4f")
 
@@ -191,7 +191,7 @@ if st.button("🚀 Rodar Simulação Florestal", use_container_width=True, type=
         st.header("🎯 3. Esforço de Crescimento (Fator de Compensação: {:.12f})".format(b3_opt))
         
         st.markdown("A projeção do diâmetro das árvores vizinhas foi alterada pela inclusão do termo aditivo compensatório:")
-        st.latex(r"DAP_2 = DAP_1 \cdot \exp\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2}) + \beta_3 \cdot FLET\right]")
+        st.latex(r"dap_2 = dap_1 \cdot \e\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2}) + \beta_3 \cdot FLET\right]")
         st.markdown("Nesta formulação, o parâmetro $\beta_3$ atua como um multiplicador de resiliência sobre o **Fator de Liberação Espaço-Temporal  ($FLET$)**, capitalizando o espaço extra deixado pelas clareiras e o tempo decorrido desde a mortalidade.")
         
         dados_ganho, caminho_csv = mt.gerar_relatorio_individual_e_ganho(df_100, df_mort, df_comp)
@@ -200,7 +200,7 @@ if st.button("🚀 Rodar Simulação Florestal", use_container_width=True, type=
             st.info(f"""
             Para atingir a resiliência produtiva do talhão, as **árvores vizinhas sobreviventes** precisaram crescer em média:
             * **+ {dados_ganho['ganho_vol']:.2f}% em Volume** (Média subiu de {dados_ganho['vol_mort']:.4f} m³ para {dados_ganho['vol_comp']:.4f} m³).
-            * **+ {dados_ganho['ganho_dap']:.2f}% em Diâmetro (DAP)** (Média subiu de {dados_ganho['dap_mort']:.2f} cm para {dados_ganho['dap_comp']:.2f} cm).
+            * **+ {dados_ganho['ganho_dap']:.2f}% em Diâmetro (dap)** (Média subiu de {dados_ganho['dap_mort']:.2f} cm para {dados_ganho['dap_comp']:.2f} cm).
             """)
 
         # --- ALTERAÇÃO 4: GRÁFICOS REDESENHADOS ---

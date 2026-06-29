@@ -89,19 +89,19 @@ with st.sidebar.expander("🔬 Parâmetros Biométricos (Modelos)", expanded=Fal
 
     st.markdown("---")
     st.markdown("**4. Projeção de dap (Modelo Base)**")
-    st.latex(r"dap_2 = dap_1 \cdot \e\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2})\right]")
+    st.latex(r"dap_2 = dap_1 \cdot e\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2})\right]")
     b1_dap_in = st.number_input("B1 Proj. DAP", value=-9.533596, format="%.6f")
     b2_dap_in = st.number_input("B2 Proj. DAP", value=-0.812691, format="%.6f")
 
     st.markdown("---")
     st.markdown("**5. Projeção de h_t**")
-    st.latex(r"ht_2 = ht_1 \cdot \e\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2})\right]")
+    st.latex(r"ht_2 = ht_1 \cdot e\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2})\right]")
     b1_htp_in = st.number_input("B1 Proj. HT", value=-10.332914, format="%.6f")
     b2_htp_in = st.number_input("B2 Proj. HT", value=-0.626933, format="%.6f")
 
     st.markdown("---")
     st.markdown("**6. Risco de Mortalidade (Logística)**")
-    st.latex(r"P(m) = \frac{1}{1 + \e[-(\beta_0 + \beta_1 \cdot IPV)]}")
+    st.latex(r"P(m) = \frac{1}{1 + e[-(\beta_0 + \beta_1 \cdot IPV)]}")
     b0_mort_in = st.number_input("B0 Mortalidade", value=-0.8852, format="%.4f")
     b1_mort_in = st.number_input("B1 Mortalidade (Peso IPV)", value=-6.1832, format="%.4f")
 
@@ -191,8 +191,8 @@ if st.button("🚀 Rodar Simulação Florestal", use_container_width=True, type=
         st.header("🎯 3. Esforço de Crescimento (Fator de Compensação: {:.12f})".format(b3_opt))
         
         st.markdown("A projeção do diâmetro das árvores vizinhas foi alterada pela inclusão do termo aditivo compensatório:")
-        st.latex(r"dap_2 = dap_1 \cdot \e\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2}) + \beta_3 \cdot FLET\right]")
-        st.markdown("Nesta formulação, o parâmetro $\beta_3$ atua como um multiplicador de resiliência sobre o **Fator de Liberação Espaço-Temporal  ($FLET$)**, capitalizando o espaço extra deixado pelas clareiras e o tempo decorrido desde a mortalidade.")
+        st.latex(r"dap_2 = dap_1 \cdot e\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2}) + \beta_3 \cdot FLET\right]")
+        st.markdown("Nesta formulação, o parâmetro B3 atua como um multiplicador de resiliência sobre o **Fator de Liberação Espaço-Temporal  ($FLET$)**, capitalizando o espaço extra deixado pelas clareiras e o tempo decorrido desde a mortalidade.")
         
         dados_ganho, caminho_csv = mt.gerar_relatorio_individual_e_ganho(df_100, df_mort, df_comp)
         

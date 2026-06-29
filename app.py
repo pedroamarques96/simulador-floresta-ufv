@@ -94,8 +94,8 @@ with st.sidebar.expander("🔬 Parâmetros Biométricos (Modelos)", expanded=Fal
     b2_dap_in = st.number_input("B2 Proj. dap", value=-0.812691, format="%.6f")
 
     st.markdown("---")
-    st.markdown("**5. Projeção de ht**")
-    st.latex(r"h_t_2 = h_t_1 \cdot e\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2})\right]")
+    st.markdown("**5. Projeção de Altura Total**")
+    st.latex(r"ht_2 = ht_1 \cdot e\left[\beta_1 (Idade_2^{\beta_2} - Idade_1^{\beta_2})\right]")
     b1_htp_in = st.number_input("B1 Proj. ht", value=-10.332914, format="%.6f")
     b2_htp_in = st.number_input("B2 Proj. ht", value=-0.626933, format="%.6f")
 

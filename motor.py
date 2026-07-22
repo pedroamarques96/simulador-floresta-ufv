@@ -19,13 +19,13 @@ plt.rcParams['figure.dpi'] = 150
 # 1. PARÂMETROS DO CENÁRIO E ESPAÇAMENTO (Valores Padrão - Alteráveis pelo App)
 # ==============================================================================
 IDADE_INICIAL = 24
-HORIZONTE = 60
+HORIZONTE = 72
 AGENDA = {
     24: 0.10,  # 10% de mortalidade aos 24 meses
 } 
 
 DIST_LINHA = 3.0       
-DIST_ENTRELINHA = 2.0  
+DIST_ENTRELINHA = 3.0  
 DIST_DIAG = np.sqrt(DIST_LINHA**2 + DIST_ENTRELINHA**2)
 
 LINHAS = 33
@@ -381,7 +381,7 @@ def realizar_analise_anual_completa(df_sem_comp, df_com_comp, df_100_viva, coefi
     # GRÁFICO 2: EVOLUÇÃO DAP, HT e VOL
     # ==========================================
     fig_tendencia, axes = plt.subplots(1, 3, figsize=(18, 5))
-    vars_plot = [('DAP', 'cm'), ('HT', 'm'), ('VOL', 'm³')]
+    vars_plot = [('$dap$', 'cm'), ('$h_t$', 'm'), ('$v$', 'm³')]
     
     for i, (var, unit) in enumerate(vars_plot):
         sns.lineplot(data=df_viz_total, x='Idade', y=var, hue='Cenario', palette=paleta_cores, ax=axes[i], linewidth=3)

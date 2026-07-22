@@ -381,12 +381,20 @@ def realizar_analise_anual_completa(df_sem_comp, df_com_comp, df_100_viva, coefi
     # GRÁFICO 2: EVOLUÇÃO DAP, HT e VOL
     # ==========================================
     fig_tendencia, axes = plt.subplots(1, 3, figsize=(18, 5))
-    vars_plot = [('$dap$', 'cm'), ('$h_t$', 'm'), ('$v$', 'm³')]
     
-    for i, (var, unit) in enumerate(vars_plot):
-        sns.lineplot(data=df_viz_total, x='Idade', y=var, hue='Cenario', palette=paleta_cores, ax=axes[i], linewidth=3)
-        axes[i].set_title(f"Evolução Média: {var}", fontsize=14, weight='bold', color='#333333', pad=15)
-        axes[i].set_ylabel(f"{var} ({unit})", fontsize=12)
+    # Estrutura: ('coluna_no_dataframe', '$rotulo_formatado$', 'unidade')
+    vars_plot = [
+        ('DAP', '$dap$', 'cm'), 
+        ('HT', '$h_t$', 'm'), 
+        ('VOL', '$v$', 'm³')
+    ]
+    
+    for i, (col, var_label, unit) in enumerate(vars_plot):
+        sns.lineplot(data=df_viz_total, x='Idade', y=col, hue='Cenario', palette=paleta_cores, ax=axes[i], linewidth=3)
+        
+        # Usamos o rótulo formatado no título e no eixo Y
+        axes[i].set_title(f"Evolução Média: {var_label}", fontsize=14, weight='bold', color='#333333', pad=15)
+        axes[i].set_ylabel(f"{var_label} ({unit})", fontsize=12)
         axes[i].set_xlabel("Idade (meses)", fontsize=12)
         
         # Limpando o visual

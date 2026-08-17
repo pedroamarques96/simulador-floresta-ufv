@@ -169,20 +169,49 @@ def simular_floresta_compensatoria(floresta_dict, idade_inicial, horizonte_meses
     dap_atual = floresta_dict['DAP'].copy()
     ht_atual = floresta_dict['HT'].copy()
 
-    idrp_atual = calcular_idrp_matricial(dap_atual, DIST_LINHA, DIST_ENTRELINHA, DIST_DIAG)
-    vol_atual = np.exp(B0_VTCC + B1_VTCC * np.log(dap_atual) + B2_VTCC * np.log(ht_atual))
-
-    LINHAS_atual, COLUNAS_atual = dap_atual.shape
-    idade_atual = idade_inicial
     idade_final = idade_inicial + horizonte_meses
+    LINHAS_atual, COLUNAS_atual = dap_atual.shape
 
     grid_data_morte = np.full((LINHAS_atual, COLUNAS_atual), np.nan)
     mask_vizinhas_acumulado = np.zeros((LINHAS_atual, COLUNAS_atual), dtype=bool)
     dados_exportacao = []
     grid_contagem = np.zeros((LINHAS_atual, COLUNAS_atual))
 
+    agenda_pendente = cronograma_mortalidade.copy()
+    
     # =================================================================================
-    # FUNÇÃO INTERNA (DRY): Isola a lógica de mortalidade para reaproveitamento
+    # A GRANDE SACADA: MÁQUINA DO TEMPO (Retroprojetando a floresta inteira)
+    # =================================================================================
+    idades_passadas = [id_mort for id_mort in agenda_pendente.keys() if id_mort <= idade_inicial]
+    
+    if idades_passadas:
+        # Volta no relógio para o momento da primeira mortalidade (Mínimo biológico = 1)
+        idade_relagio = max(1, min(idades_passadas)) 
+        
+        # Ajusta caso o usuário insira mortalidade no mês 0
+        if 0 in agenda_pendente:
+            agenda_pendente[1] = agenda_pendente.pop(0)
+        
+        # Retroprojeta TODOS os DAPs e HTs para a idade do passado
+        with np.errstate(invalid='ignore', divide='ignore'):
+            expoente_retro_dap = B1_DAP * ((idade_inicial ** B2_DAP) - (idade_relagio ** B2_DAP))
+            dap_atual = dap_atual / np.exp(expoente_retro_dap)
+            
+            expoente_retro_ht = B1_HT_PROJ * ((idade_inicial ** B2_HT_PROJ) - (idade_relagio ** B2_HT_PROJ))
+            ht_atual = ht_atual / np.exp(expoente_retro_ht)
+        
+        # O SIMULADOR AGORA COMEÇA NO PASSADO!
+        idade_atual = idade_relagio 
+    else:
+        # Se não tem morte no passado, começa no inventário normal
+        idade_atual = idade_inicial
+        
+    # Calcula IDRP e Vol iniciais para o tempo de largada (seja ele no passado ou no presente)
+    idrp_atual = calcular_idrp_matricial(dap_atual, DIST_LINHA, DIST_ENTRELINHA, DIST_DIAG)
+    vol_atual = np.exp(B0_VTCC + B1_VTCC * np.log(dap_atual) + B2_VTCC * np.log(ht_atual))
+
+    # =================================================================================
+    # FUNÇÃO INTERNA: Aplicar mortalidade e recalcular concorrência
     # =================================================================================
     def aplicar_morte_na_malha(perc_meta, idade_evento):
         nonlocal dap_atual, ht_atual, vol_atual, idrp_atual, grid_data_morte, grid_contagem
@@ -203,60 +232,39 @@ def simular_floresta_compensatoria(floresta_dict, idade_inicial, horizonte_meses
             indices_sorteados = np.random.choice(indices_vivos, size=n_morrer, replace=False, p=probs_norm)
             linhas_m, colunas_m = np.unravel_index(indices_sorteados, (LINHAS_atual, COLUNAS_atual))
 
-            # Abate as árvores
+            # Abate
             dap_atual[linhas_m, colunas_m] = np.nan
             ht_atual[linhas_m, colunas_m] = np.nan
             vol_atual[linhas_m, colunas_m] = np.nan
             idrp_atual[linhas_m, colunas_m] = np.nan
 
-            # Registra a idade do evento (Mesmo que seja no passado, ex: 0 meses)
             mask_new = np.isnan(grid_data_morte[linhas_m, colunas_m])
             l_new, c_new = linhas_m[mask_new], colunas_m[mask_new]
             grid_data_morte[l_new, c_new] = idade_evento
 
-            # Contabiliza vizinhos mortos para as sobreviventes
             for lm, cm in zip(linhas_m, colunas_m):
                 vizs = obter_vizinhos_8(lm, cm, LINHAS_atual, COLUNAS_atual)
                 for lv, cv in vizs:
                     if not np.isnan(dap_atual[lv, cv]):
                         grid_contagem[lv, cv] += 1
 
-            # RECALCULA O IDRP após as mortes (árvores vivas "sentem" a liberação do espaço)
+            # As árvores vivas percebem a liberação de espaço imediatamente
             idrp_atual = calcular_idrp_matricial(dap_atual, DIST_LINHA, DIST_ENTRELINHA, DIST_DIAG)
-    # =================================================================================
-
 
     # =================================================================================
-    # ETAPA 1: PRÉ-PROCESSAMENTO (BLINDAGEM PARA MORTES NO PASSADO OU NO INVENTÁRIO)
-    # =================================================================================
-    agenda_pendente = cronograma_mortalidade.copy()
-    
-    # Filtra as idades agendadas que são <= à idade inicial (ex: 0, 12 ou 24 meses)
-    idades_passadas = [id_mort for id_mort in agenda_pendente.keys() if id_mort <= idade_inicial]
-
-    # Processa ordenadamente. Se o usuário colocou mortes aos 0 e aos 12, ele vai 
-    # abater aos 0, recalcular concorrência, depois abater aos 12.
-    for id_passada in sorted(idades_passadas):
-        perc = agenda_pendente.pop(id_passada) # Remove da agenda para não repetir no futuro
-        aplicar_morte_na_malha(perc, id_passada)
-
-
-    # =================================================================================
-    # ETAPA 2: LOOP PRINCIPAL DA SIMULAÇÃO NO TEMPO
+    # LOOP PRINCIPAL DO TEMPO (Caminha do passado até o horizonte simulando mês a mês)
     # =================================================================================
     while idade_atual <= idade_final:
         
-        # Aplica mortalidades futuras (se ainda existirem na agenda pendente)
+        # 1. Se chegou a hora de alguma mortalidade (passada ou futura), executa!
         if idade_atual in agenda_pendente:
             perc = agenda_pendente.pop(idade_atual)
             aplicar_morte_na_malha(perc, idade_atual)
 
-        # O ILE (flet) usa o grid_data_morte. Se a árvore foi morta no pré-processamento 
-        # com idade 0, o delta será: idade_atual(ex: 24) - 0 = 24 meses. Lógica perfeita!
         grid_ile_dinamico = calcular_ile_dinamico(grid_data_morte, idade_atual, DIST_LINHA, DIST_ENTRELINHA, DIST_DIAG)
         mask_vizinhas_acumulado = mask_vizinhas_acumulado | (grid_ile_dinamico > 0)
 
-        # Exportação de dados da malha atual
+        # 2. Exportação de Histórico (Vai exportar desde a idade no passado!)
         for l in range(LINHAS_atual):
             for c in range(COLUNAS_atual):
                 status = "Intacta"
@@ -270,19 +278,24 @@ def simular_floresta_compensatoria(floresta_dict, idade_inicial, horizonte_meses
                     "Vizinhos_Mortos": grid_contagem[l, c]
                 })
 
-        # Verifica fim da simulação
         if idade_atual == idade_final: 
             break
         
-        # Salto temporal (Avança de 12 em 12 meses até o limite)
-        passo = 12 if (idade_final - idade_atual) >= 12 else (idade_final - idade_atual)
+        # 3. Sincronizador de anos para manter gráficos de 12 em 12 meses
+        meses_para_fechar_ano = 12 - (idade_atual % 12)
+        if (idade_atual % 12 != 0) and ((idade_final - idade_atual) >= meses_para_fechar_ano):
+            passo = meses_para_fechar_ano
+        else:
+            passo = 12 if (idade_final - idade_atual) >= 12 else (idade_final - idade_atual)
+            
         idade_futura = idade_atual + passo
 
-        # Crescimento - Equações de Diferença Algébrica (Projeção)
+        # 4. Projeção de Crescimento (Onde a mágica de atualização do DAP acontece)
         with np.errstate(invalid='ignore'):
             termo_idade = B1_DAP * ((idade_futura ** B2_DAP) - (idade_atual ** B2_DAP))
             termo_compensatorio = 0.0
             
+            # Se estamos otimizando ou já temos o B3, aplicamos ele!
             if beta_b3 != 0:
                 termo_compensatorio = beta_b3 * grid_ile_dinamico
 
@@ -292,7 +305,6 @@ def simular_floresta_compensatoria(floresta_dict, idade_inicial, horizonte_meses
             expoente_ht = B1_HT_PROJ * ((idade_futura ** B2_HT_PROJ) - (idade_atual ** B2_HT_PROJ))
             ht_fut = ht_atual * np.exp(expoente_ht)
 
-        # Mascara as mortas novamente (garante que não "ressuscitem" na matemática de arrays)
         dap_fut = np.where(np.isnan(dap_atual), np.nan, dap_fut)
         ht_fut = np.where(np.isnan(ht_atual), np.nan, ht_fut)
 

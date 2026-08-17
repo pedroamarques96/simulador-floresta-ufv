@@ -29,12 +29,12 @@ horizonte = st.sidebar.slider("Horizonte de Simulação (meses)", 12, 120, 60, s
 st.sidebar.subheader("🌱 Espaçamento Inicial")
 col1, col2 = st.sidebar.columns(2)
 dist_linha = col1.number_input("Linha (m)", value=3.0, step=0.1)
-dist_entre = col2.number_input("Entrelinha (m)", value=2.0, step=0.1)
+dist_entre = col2.number_input("Entrelinha (m)", value=3.0, step=0.1)
 
 st.sidebar.subheader("📐 Dimensões da Malha")
 col_l, col_c = st.sidebar.columns(2)
 num_linhas = col_l.number_input("Nº de Linhas", min_value=5, max_value=150, value=33, step=1)
-num_colunas = col_c.number_input("Nº de Colunas", min_value=5, max_value=150, value=33, step=1)
+num_colunas = col_c.number_input("Nº de Colunas", min_value=5, max_value=150, value=34, step=1)
 
 n_total_arvores = num_linhas * num_colunas
 area_m2 = n_total_arvores * (dist_linha * dist_entre)
@@ -46,7 +46,7 @@ num_eventos = st.sidebar.number_input("Quantidade de Eventos", min_value=1, max_
 agenda_usuario = {}
 for i in range(num_eventos):
     c1, c2 = st.sidebar.columns(2)
-    id_ev = c1.number_input(f"Idade {i+1} (m)", min_value=12, max_value=120, value=int(idade_ini) + (i*24), step=12, key=f"id_{i}")
+    id_ev = c1.number_input(f"Idade {i+1} (m)", min_value=0, max_value=120, value=int(idade_ini) + (i*24), step=12, key=f"id_{i}")
     taxa_ev = c2.number_input(f"Morte (%)", min_value=0.0, max_value=100.0, value=10.0, step=1.0, key=f"tax_{i}")
     agenda_usuario[int(id_ev)] = taxa_ev / 100.0
 
@@ -61,7 +61,7 @@ modo_simulacao = st.sidebar.radio(
 )
 
 if modo_simulacao == "Definir B3 Manualmente":
-    b3_usuario = st.sidebar.number_input("Valor de \u03B23 (\u00CDndice de Libera\u00E7\u00E3o)", min_value=0.0, max_value=2.0, value=0.0400, step=0.001, format="%.5f")
+    b3_usuario = st.sidebar.number_input("Valor de \u03B23 (\u00CDndice de Libera\u00E7\u00E3o)", min_value=0.0, max_value=2.0, value=0.042534, step=0.001, format="%.5f")
 else:
     b3_usuario = None
 

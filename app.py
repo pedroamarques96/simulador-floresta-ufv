@@ -61,7 +61,7 @@ modo_simulacao = st.sidebar.radio(
 )
 
 if modo_simulacao == "Definir B3 Manualmente":
-    b3_usuario = st.sidebar.number_input("Valor de \u03B23 (\u00CDndice de Libera\u00E7\u00E3o)", min_value=0.0, max_value=2.0, value=0.042534, step=0.001, format="%.5f")
+    b3_usuario = st.sidebar.number_input("Valor de \u03B23 (FLET)", min_value=0.0, max_value=2.0, value=0.042534, step=0.001, format="%.5f")
 else:
     b3_usuario = None
 

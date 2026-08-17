@@ -23,7 +23,7 @@ st.divider()
 # ==============================================================================
 st.sidebar.header("⚙️ Parâmetros da Floresta")
 
-idade_ini = st.sidebar.number_input("Idade Inicial (meses)", min_value=12, max_value=60, value=24, step=12)
+idade_ini = st.sidebar.number_input("Idade Inicial (meses)", min_value=12, max_value=120, value=24, step=12)
 horizonte = st.sidebar.slider("Horizonte de Simulação (meses)", 12, 120, 60, step=12)
 
 st.sidebar.subheader("🌱 Espaçamento Inicial")
@@ -46,7 +46,7 @@ num_eventos = st.sidebar.number_input("Quantidade de Eventos", min_value=1, max_
 agenda_usuario = {}
 for i in range(num_eventos):
     c1, c2 = st.sidebar.columns(2)
-    id_ev = c1.number_input(f"Idade {i+1} (m)", min_value=0, max_value=120, value=int(idade_ini) + (i*24), step=12, key=f"id_{i}")
+    id_ev = c1.number_input(f"Idade {i+1} (m)", min_value=1, max_value=240, value=int(idade_ini) + (i*24), step=12, key=f"id_{i}")
     taxa_ev = c2.number_input(f"Morte (%)", min_value=0.0, max_value=100.0, value=10.0, step=1.0, key=f"tax_{i}")
     agenda_usuario[int(id_ev)] = taxa_ev / 100.0
 
